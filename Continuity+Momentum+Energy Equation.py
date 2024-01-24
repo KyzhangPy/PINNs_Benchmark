@@ -61,9 +61,20 @@ class PhysicsInformedNN:
    
     ## 初始化神经网络
     self.weights, self.biases = self.initialize_NN(layers)
-    ## 初始化参数，dtype表示创建一个数据类型对象
+    ## 初始化参数，定义变量类型，0.0表示定义变量初值，dtype表示创建一个数据类型对象
     self.lambda_1 = tf.Variable([0.0], dtype=tf.float32)
     self.lambda_2 = tf.Variable([0.0], dtype=tf.float32)
+    ## tf.Session用来创建一个新的tensorflow会话
+    ## tensorflow的计算图只是描述了计算执行的过程，没有真正执行计算，真正的计算过程是在tensorflow的会话中进行的
+    ## Session提供了求解张量，执行操作的运行环境，将计算图转化为不同设备上的执行步骤。包括创建会话（tf.Session）、执行会话（sess.run）、关闭会话（sess.close）
+    ## tf.ConfigProto作用是配置tf.Session的运算方式，比如GPU运算或CPU运算
+    ##
+    self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True))
+    ## 
+    self.x_tf = tf.placeholder(tf.float32, shape=[None, self.x.shape[1]])
+
+
+
 
 
 
