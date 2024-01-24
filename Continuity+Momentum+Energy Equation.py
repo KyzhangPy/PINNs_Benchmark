@@ -58,8 +58,13 @@ class PhysicsInformedNN:
     self.v = v
     ## 保存类的NN层数
     self.layers = layers
+   
     ## 初始化神经网络
-    self.weights, self.biases = self.initialize_NN(layers) 
+    self.weights, self.biases = self.initialize_NN(layers)
+    ## 初始化参数，dtype表示创建一个数据类型对象
+    self.lambda_1 = tf.Variable([0.0], dtype=tf.float32)
+    self.lambda_2 = tf.Variable([0.0], dtype=tf.float32)
+
 
 
 
