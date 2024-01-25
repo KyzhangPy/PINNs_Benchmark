@@ -63,7 +63,7 @@ class PhysicsInformedNN:
     ## 保存类的NN层数
     self.layers = layers
    
-    ## 初始化神经网络
+    ## 定义神经网络的参数？
     self.weights, self.biases = self.initialize_NN(layers)
     
     ## 初始化参数，定义变量类型，0.0表示定义变量初值，dtype表示创建一个数据类型对象
@@ -89,8 +89,36 @@ class PhysicsInformedNN:
     self.u_tf = tf.placeholder(tf.float32, shape=[None, self.u.shape[1]])
     self.v_tf = tf.placeholder(tf.float32, shape=[None, self.v.shape[1]])
     
-    ## 
+    ## 构建神经网络的输入输出关系？
     self.u_pred, self.v_pred, self.p_pred, self.f_u_pred, self.f_v_pred = self.net_NS(self.x_tf, self.y_tf, self.t_tf)
+
+    ## 定义损失函数的计算关系
+    self.loss = tf.reduce_sum(tf.square(self.u_tf - self.u_pred)) + \
+                tf.reduce_sum(tf.square(self.v_tf - self.v_pred)) + \
+                tf.reduce_sum(tf.square(self.f_u_pred)) + \
+                tf.reduce_sum(tf.square(self.f_v_pred))
+
+    ## 定义优化方法
+    ## tf.contrib.opt.ScipyOptimizerInterface-tensorflow的模块，提供将Scipy优化器与tensorflow集成的接口，可使用Scipy中的优化算法来优化Tensorflow模型中的变量
+    ## L-BFGS-B表示优化方法，
+    self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(self.loss, 
+                                                            method = 'L-BFGS-B', 
+                                                            options = {'maxiter': 50000,
+                                                                       'maxfun': 50000,
+                                                                       'maxcor': 50,
+                                                                       'maxls': 50,
+                                                                       'ftol' : 1.0 * np.finfo(float).eps})
+    
+    ## 
+    self.optimizer_Adam = tf.train.AdamOptimizer()
+    self.train_op_Adam = self.optimizer_Adam.minimize(self.loss) 
+    
+    ## 
+    init = tf.global_variables_initializer()
+    self.sess.run(init)
+
+
+    
 
 
 
