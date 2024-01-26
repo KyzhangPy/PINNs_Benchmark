@@ -38,7 +38,7 @@ tf.set_random_seed(1234)
 
 # 定义PINN的类（类是一种数据类型，代表着一类具有相同属性和方法的对象的集合）
 class PhysicsInformedNN:
-  #初始化类（定义类中的变量）
+  #定义用来初始化神经网络参数项的函数
   def __init__(self, x, y, t, u, v, layers):
     
     ## 数组的组合拼接，1表示按列拼接，X表示自变量的矩阵
@@ -99,8 +99,13 @@ class PhysicsInformedNN:
                 tf.reduce_sum(tf.square(self.f_v_pred))
 
     ## 定义优化方法
-    ## tf.contrib.opt.ScipyOptimizerInterface-tensorflow的模块，提供将Scipy优化器与tensorflow集成的接口，可使用Scipy中的优化算法来优化Tensorflow模型中的变量
-    ## L-BFGS-B表示优化方法，
+    ## tf.contrib.opt.ScipyOptimizerInterface是tensorflow的模块，提供将Scipy优化器与tensorflow集成的接口，可使用Scipy中的优化算法来优化Tensorflow模型中的变量
+    ## L-BFGS-B表示优化方法
+    ## maxiter定义最大迭代次数，int
+    ## maxfun定义函数计算的最大数量，int
+    ## maxcor定义有限内存矩阵的最大可变度量校正数（有限内存BFGS方法不存储完整的hessian，而是使用多项校正数来近似），int
+    ## maxls定义最大的线性搜索步数，int，默认值20
+    ## ftol表示当f^k-f^[(k+1)/max[f^k,f^(k+1),1]]小于ftol值时，迭代停止
     self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(self.loss, 
                                                             method = 'L-BFGS-B', 
                                                             options = {'maxiter': 50000,
@@ -109,14 +114,32 @@ class PhysicsInformedNN:
                                                                        'maxls': 50,
                                                                        'ftol' : 1.0 * np.finfo(float).eps})
     
-    ## 
+    ## 引入adam优化算法：是一个选取全局最优点的优化算法，引入了二次方梯度修正，来最小化损失函数
     self.optimizer_Adam = tf.train.AdamOptimizer()
     self.train_op_Adam = self.optimizer_Adam.minimize(self.loss) 
     
-    ## 
+    ## 初始化模型的参数
     init = tf.global_variables_initializer()
     self.sess.run(init)
 
+    # 定义一个用来初始化神经网络中各参数值的函数
+    def initialize_NN(self, layers):  
+      weights = []
+      biases = []
+      num_layers = len(layers) 
+      for l in range(0,num_layers-1):
+        W = self.xavier_init(size=[layers[l], layers[l+1]]) ## xavier_init()是根据每层的输入输出个数决定参数随机初始化的分布范围
+        b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32) ## 
+        weights.append(W)
+        biases.append(b)
+      return weights, biases
+    
+    # 定义一个用来
+    def xavier_init(self, size):
+      in_dim = size[0]
+      out_dim = size[1]        
+      xavier_stddev = np.sqrt(2/(in_dim + out_dim))
+      return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev=xavier_stddev), dtype=tf.float32)
 
     
 
