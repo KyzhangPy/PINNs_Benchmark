@@ -138,15 +138,23 @@ class PhysicsInformedNN:
     def xavier_init(self, size):
       in_dim = size[0]  ## in_dim表示输入层的参数个数，即上述的m
       out_dim = size[1]  ## out_dim表示输出层的参数个数，即上述的n       
-      xavier_stddev = np.sqrt(2/(in_dim + out_dim))  ## np.sqrt()计算数组中各元素的平方根，某一层的权重W的方差即为sqrt(2/(该层的输入个数+该层的输出个数))，论文中有相关推导
+      xavier_stddev = np.sqrt(2/(in_dim + out_dim))  ## np.sqrt()计算数组中各元素的平方根，某一层的权重W的方差即为sqrt(2/(该层的输入个数+该层的输出个数))，Bengio论文中有相关推导
       return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev=xavier_stddev), dtype=tf.float32)
       ## tf.truncated_normal表示截断地产生正态分布的函数（平均值、标准差可设定），产生的值如果与均值之差大于2倍标准差则重新选择
 
-    # 定义一个
+    # 定义neural_net
     def neural_net(self, X, weights, biases):
-      num_layers = len(weights) + 1
+      num_layers = len(weights) + 1  ## NN的总层数
       
-      H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0
+      H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0  ## 
+      for l in range(0,num_layers-2):
+        W = weights[l]
+        b = biases[l]
+        H = tf.tanh(tf.add(tf.matmul(H, W), b))  ## 
+      W = weights[-1]
+      b = biases[-1]
+      Y = tf.add(tf.matmul(H, W), b)
+      return Y
 
 
     
