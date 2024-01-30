@@ -122,24 +122,32 @@ class PhysicsInformedNN:
     init = tf.global_variables_initializer()
     self.sess.run(init)
 
-    # 定义一个用来初始化神经网络中各参数值的函数
+    # 定义initialize_NN（用来初始化神经网络中权重、偏移参数值的函数）
     def initialize_NN(self, layers):  
       weights = []
       biases = []
       num_layers = len(layers)  ## num_layers为层向量的长度，即为神经元的层数
       for l in range(0,num_layers-1):
-        W = self.xavier_init(size=[layers[l], layers[l+1]])  ## xavier_init()是随机初始化参数的分布范围，此处是初始化每两层之间的权重参数w，是一个l层（m个输入）到l+1层（n个输出）的m*n矩阵
+        W = self.xavier_init(size=[layers[l], layers[l+1]])  ## xavier_init()是随机初始化参数的分布范围，此处是初始化每两层之间的权重参数W，是一个l层（m个输入）到l+1层（n个输出）的m*n矩阵
         b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32)  ##  tf.zeros()表示生成全为0的tensor张量，此处是初始化每层的偏移参数b,从第l+1层开始（n个输出）是一个1*n的向量，初始值为0
         weights.append(W)
         biases.append(b)  ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为所有层之间的权重和偏移参数的矩阵
       return weights, biases
     
-    # 定义一个标准差函数
+    # 定义xavier_init（用来初始化参数的分布范围的函数），该初始化方法由Bengio等人提出，为了保证前向传播和反向传播时每一层的方差一致，根据每层的输入输出个数来决定参数随机初始化的分布范围
     def xavier_init(self, size):
-      in_dim = size[0]
-      out_dim = size[1]        
-      xavier_stddev = np.sqrt(2/(in_dim + out_dim))
+      in_dim = size[0]  ## in_dim表示输入层的参数个数，即上述的m
+      out_dim = size[1]  ## out_dim表示输出层的参数个数，即上述的n       
+      xavier_stddev = np.sqrt(2/(in_dim + out_dim))  ## np.sqrt()计算数组中各元素的平方根，某一层的权重W的方差即为sqrt(2/(该层的输入个数+该层的输出个数))，论文中有相关推导
       return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev=xavier_stddev), dtype=tf.float32)
+      ## tf.truncated_normal表示截断地产生正态分布的函数（平均值、标准差可设定），产生的值如果与均值之差大于2倍标准差则重新选择
+
+    # 定义一个
+    def neural_net(self, X, weights, biases):
+      num_layers = len(weights) + 1
+      
+      H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0
+
 
     
 
