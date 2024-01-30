@@ -126,15 +126,15 @@ class PhysicsInformedNN:
     def initialize_NN(self, layers):  
       weights = []
       biases = []
-      num_layers = len(layers) 
+      num_layers = len(layers)  ## num_layers为层向量的长度，即为神经元的层数
       for l in range(0,num_layers-1):
-        W = self.xavier_init(size=[layers[l], layers[l+1]]) ## xavier_init()是根据每层的输入输出个数决定参数随机初始化的分布范围
-        b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32) ## 
+        W = self.xavier_init(size=[layers[l], layers[l+1]])  ## xavier_init()是随机初始化参数的分布范围，此处是初始化每两层之间的权重参数w，是一个l层（m个输入）到l+1层（n个输出）的m*n矩阵
+        b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32)  ##  tf.zeros()表示生成全为0的tensor张量，此处是初始化每层的偏移参数b,从第l+1层开始（n个输出）是一个1*n的向量，初始值为0
         weights.append(W)
-        biases.append(b)
+        biases.append(b)  ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为所有层之间的权重和偏移参数的矩阵
       return weights, biases
     
-    # 定义一个用来
+    # 定义一个标准差函数
     def xavier_init(self, size):
       in_dim = size[0]
       out_dim = size[1]        
