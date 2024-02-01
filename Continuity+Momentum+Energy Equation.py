@@ -128,10 +128,12 @@ class PhysicsInformedNN:
       biases = []
       num_layers = len(layers)  ## num_layers为层向量的长度，即为神经元的层数
       for l in range(0,num_layers-1):
-        W = self.xavier_init(size=[layers[l], layers[l+1]])  ## xavier_init()是随机初始化参数的分布范围，此处是初始化每两层之间的权重参数W，是一个l层（m个输入）到l+1层（n个输出）的m*n矩阵
-        b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32)  ##  tf.zeros()表示生成全为0的tensor张量，此处是初始化每层的偏移参数b,从第l+1层开始（n个输出）是一个1*n的向量，初始值为0
+        W = self.xavier_init(size=[layers[l], layers[l+1]]) 
+        ## xavier_init()是随机初始化参数的分布范围，此处是初始化每两层之间的权重参数W，是一个l层（m个输入）到l+1层（n个输出）的m*n矩阵
+        b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32)  
+        ##  tf.zeros()表示生成全为0的tensor张量，此处是初始化每层的偏移参数b,从第l+1层开始（n个输出）是一个1*n的向量，初始值为0
         weights.append(W)
-        biases.append(b)  ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为所有层之间的权重和偏移参数的矩阵
+        biases.append(b)  ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为罗列出所有层之间的权重和偏移参数的矩阵
       return weights, biases
     
     # 定义xavier_init（用来初始化参数的分布范围的函数），该初始化方法由Bengio等人提出，为了保证前向传播和反向传播时每一层的方差一致，根据每层的输入输出个数来决定参数随机初始化的分布范围
@@ -142,19 +144,74 @@ class PhysicsInformedNN:
       return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev=xavier_stddev), dtype=tf.float32)
       ## tf.truncated_normal表示截断地产生正态分布的函数（平均值、标准差可设定），产生的值如果与均值之差大于2倍标准差则重新选择
 
-    # 定义neural_net
+    # 定义neural_net，用于构建神经网络的计算关系（从输入算到输出）
     def neural_net(self, X, weights, biases):
       num_layers = len(weights) + 1  ## NN的总层数
       
-      H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0  ## 
+      H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0  
+      ## self.1b表示自变量（x,y,t）的最小值向量，self.ub表示自变量（x,y,t）的最大值向量
+      ## 对初始的自变量矩阵进行归一化处理
+      ## 2*归一化结果再-1，即把输入X处理成关于0对称
       for l in range(0,num_layers-2):
         W = weights[l]
         b = biases[l]
-        H = tf.tanh(tf.add(tf.matmul(H, W), b))  ## 
-      W = weights[-1]
-      b = biases[-1]
-      Y = tf.add(tf.matmul(H, W), b)
+        H = tf.tanh(tf.add(tf.matmul(H, W), b))  
+        ## tf.matmul表示矩阵相乘，tf.add表示张量矩阵相加
+        ## 用循环的方式构建神经网络的计算关系，激活函数是tanh，逐层往下计算
+      W = weights[-1]  ## 权重参数矩阵weights的最后一行，即最后两层之间的权重参数
+      b = biases[-1]  ## 偏移参数矩阵biases的最后一行，即最后两层之间的偏移参数
+      Y = tf.add(tf.matmul(H, W), b) ##  输出矩阵Y，即输出层的结果
       return Y
+    
+    # 定义NS方程
+    def net_NS(self, x, y, t):
+      lambda_1 = self.lambda_1
+      lambda_2 = self.lambda_2 
+      ## 初始化的两个变量
+      
+      psi_and_p = self.neural_net(tf.concat([x,y,t], 1), self.weights, self.biases)
+      ## tf.concat([tensor1,tensor2,tensor3,...],axis)用于拼接张量（tensor），
+      ## axis表示拼接的维度，axis=0,1,2,...，0表示在第0个维度拼接，1表示在第1个维度拼接，第0个维度为最外层方括号下的子集，第1个维度为倒数第二层方括号下的子集
+      ## 此处，输出数据的个数是2个，即p和psi
+      psi = psi_and_p[:,0:1]  ##第1维中取所有数据，第2维中取第0个数据，此处指速度值
+      p = psi_and_p[:,1:2]  ##第1维中取所有数据，第2维中取第1个数据，此处指压力值
+      
+      u = tf.gradients(psi, y)[0]  ## 速度对y方向的偏导为u？
+      v = -tf.gradients(psi, x)[0]  ## 速度对x方向的偏导为v？
+
+      ## u对x,y,t的二阶偏导
+      u_t = tf.gradients(u, t)[0]
+      u_x = tf.gradients(u, x)[0]
+      u_y = tf.gradients(u, y)[0]
+      u_xx = tf.gradients(u_x, x)[0]
+      u_yy = tf.gradients(u_y, y)[0]
+
+      ## v对x,y,t的二阶偏导
+      v_t = tf.gradients(v, t)[0]
+      v_x = tf.gradients(v, x)[0]
+      v_y = tf.gradients(v, y)[0]
+      v_xx = tf.gradients(v_x, x)[0]
+      v_yy = tf.gradients(v_y, y)[0]
+      
+      p_x = tf.gradients(p, x)[0]  ## 压力对x的偏导
+      p_y = tf.gradients(p, y)[0]  ## 压力对y的偏导
+      
+      f_u = u_t + lambda_1*(u*u_x + v*u_y) + p_x - lambda_2*(u_xx + u_yy)  ## x方向上的动量守恒方程
+      f_v = v_t + lambda_1*(u*v_x + v*v_y) + p_y - lambda_2*(v_xx + v_yy)  ## y方向上的动量守恒方程
+      
+      return u, v, p, f_u, f_v
+    
+    #   
+    def callback(self, loss, lambda_1, lambda_2):
+      print('Loss: %.3e, l1: %.3f, l2: %.5f' % (loss, lambda_1, lambda_2))
+
+
+
+
+
+
+      
+     
 
 
     
