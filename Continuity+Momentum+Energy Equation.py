@@ -132,7 +132,7 @@ class PhysicsInformedNN:
     init = tf.global_variables_initializer()
     self.sess.run(init)
 
-    # 定义initialize_NN（用来根据layers变量来初始化神经网络中权重、偏移参数值的函数）
+    # 定义initialize_NN（用来根据layers变量来初始化神经网络中权重weights、偏移biases参数值的函数）
     def initialize_NN(self, layers):  
       weights = []
       biases = []
@@ -148,7 +148,8 @@ class PhysicsInformedNN:
         ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为罗列出所有层之间的权重和偏移参数的矩阵
       return weights, biases
     
-    # 定义xavier_init（用来初始化参数的分布范围的函数）
+    # 定义xavier_init，用来控制初始化参数的分布范围
+    ## xavier_init函数在initialize_NN函数中有使用
     ## 该初始化方法由Bengio等人提出，为了保证前向传播和反向传播时每一层的方差一致，根据每层的输入输出个数来决定参数随机初始化的分布范围
     def xavier_init(self, size):
       in_dim = size[0]  
@@ -160,12 +161,13 @@ class PhysicsInformedNN:
       return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev=xavier_stddev), dtype=tf.float32)
       ## tf.truncated_normal表示截断地产生正态分布的函数（平均值、标准差可设定），产生的值如果与均值之差大于2倍标准差则重新选择
 
-    # 定义neural_net，用于构建神经网络的计算关系（从输入算到输出）
+    # 定义neural_net，用于构建神经网络的计算关系
+    ## 根据weights和biases矩阵，从输入层算到输出层的计算方法
     def neural_net(self, X, weights, biases):
       num_layers = len(weights) + 1  
       ## NN的总层数
       H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0  
-      ## self.1b表示自变量（x,y,t）的最小值向量，self.ub表示自变量（x,y,t）的最大值向量
+      ## self.1b表示自变量矩阵[x,y,t]的各列最小值向量，self.ub表示自变量矩阵[x,y,t]的各列最大值向量
       ## 对初始的自变量矩阵进行归一化处理
       ## 2*归一化结果再-1，即把输入X处理成关于0对称
       for l in range(0,num_layers-2):
@@ -173,7 +175,8 @@ class PhysicsInformedNN:
         b = biases[l]
         H = tf.tanh(tf.add(tf.matmul(H, W), b))  
         ## tf.matmul表示矩阵相乘，tf.add表示张量矩阵相加
-        ## 用循环的方式构建神经网络的计算关系，激活函数是tanh，逐层往下计算
+        ## 用循环的方式构建神经网络的计算关系，逐层计算
+        ## 激活函数是tanh，其值在-1到1的范围内
       W = weights[-1]  ## 权重参数矩阵weights的最后一行，即最后两层之间的权重参数
       b = biases[-1]  ## 偏移参数矩阵biases的最后一行，即最后两层之间的偏移参数
       Y = tf.add(tf.matmul(H, W), b) ##  输出矩阵Y，即输出层的结果
@@ -183,17 +186,17 @@ class PhysicsInformedNN:
     def net_NS(self, x, y, t):
       lambda_1 = self.lambda_1
       lambda_2 = self.lambda_2 
-      ## 初始化的两个变量
-      
+      ## 初始化的两个变量，用于表示NS方程中的未知参数
       psi_and_p = self.neural_net(tf.concat([x,y,t], 1), self.weights, self.biases)
       ## tf.concat([tensor1,tensor2,tensor3,...],axis)用于拼接张量（tensor），
       ## axis表示拼接的维度，axis=0,1,2,...，0表示在第0个维度拼接，1表示在第1个维度拼接，第0个维度为最外层方括号下的子集，第1个维度为倒数第二层方括号下的子集
       ## 此处，输出数据的个数是2个，即p和psi
-      psi = psi_and_p[:,0:1]  ##第1维中取所有数据，第2维中取第0个数据，此处指速度值
+      ## 采用neural_net函数，根据输入层的[x,y,t]和[weights,biases]计算到输出层psi_and_p
+      psi = psi_and_p[:,0:1]  ##第1维中取所有数据，第2维中取第0个数据，此处指速度张量
       p = psi_and_p[:,1:2]  ##第1维中取所有数据，第2维中取第1个数据，此处指压力值
       
-      u = tf.gradients(psi, y)[0]  ## 速度对y方向的偏导为u？
-      v = -tf.gradients(psi, x)[0]  ## 速度对x方向的偏导为v？
+      u = tf.gradients(psi, y)[0]  ## 速度对y方向的偏导为u？？？
+      v = -tf.gradients(psi, x)[0]  ## 速度对x方向的偏导为v？？？
 
       ## u对x,y,t的二阶偏导
       u_t = tf.gradients(u, t)[0]
@@ -221,11 +224,31 @@ class PhysicsInformedNN:
     def callback(self, loss, lambda_1, lambda_2):
       print('Loss: %.3e, l1: %.3f, l2: %.5f' % (loss, lambda_1, lambda_2))
     ## %.3e表示科学计数法，保留三位小数
-    ## %.3f表四常规计数法，保留三位小数
+    ## %.3f表示常规计数法，保留三位小数
     ## %.5f表示常规计数法，保留五位小数
     
     # 定义
     def train(self, nIter): 
+      
+      tf_dict = {self.x_tf: self.x, self.y_tf: self.y, self.t_tf: self.t,
+                 self.u_tf: self.u, self.v_tf: self.v}
+      ## 定义字典，
+      
+      start_time = time.time()
+      ## time.time()表示当前时间的时间戳，即1970年1月1日00:00:00到当前时间的秒数的浮点数
+      
+      for it in range(nIter):
+        self.sess.run(self.train_op_Adam, tf_dict)
+         
+        # Print
+        if it % 10 == 0:
+          elapsed = time.time() - start_time
+          loss_value = self.sess.run(self.loss, tf_dict)
+          lambda_1_value = self.sess.run(self.lambda_1)
+          lambda_2_value = self.sess.run(self.lambda_2)
+
+       
+
 
 
 
