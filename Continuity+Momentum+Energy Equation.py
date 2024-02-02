@@ -201,9 +201,12 @@ class PhysicsInformedNN:
       
       return u, v, p, f_u, f_v
     
-    #   
+    # 输出当前的Loss和lambda值
     def callback(self, loss, lambda_1, lambda_2):
       print('Loss: %.3e, l1: %.3f, l2: %.5f' % (loss, lambda_1, lambda_2))
+    ## %.3e表示科学计数法，保留三位小数
+    ## %.3f表四常规计数法，保留三位小数
+    ## %.5f表示常规计数法，保留五位小数
 
 
 
