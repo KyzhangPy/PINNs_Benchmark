@@ -35,56 +35,59 @@ import matplotlib.gridspec as gridspec
 # 设置随机数种子
 np.random.seed(1234)
 tf.set_random_seed(1234)
+随机种子应为整数
 
-# 定义PINN的类（类是一种数据类型，代表着一类具有相同属性和方法的对象的集合）
+# 定义类（类是一种数据类型，代表着一类具有相同属性和方法的对象的集合）
 class PhysicsInformedNN:
-  #定义用来初始化神经网络参数项的函数
+  
+  #定义初始化类的函数
   def __init__(self, x, y, t, u, v, layers):
     
-    ## 数组的组合拼接，1表示按列拼接，X表示自变量的矩阵
     X = np.concatenate([x, y, t], 1)
+    ## 数组的组合拼接，1表示按列拼接，X表示自变量的矩阵
     
-    ## 0表示返回矩阵中每一列的最小值，1表示返回每一行的最小值，即表示
     self.lb = X.min(0)
     self.ub = X.max(0)
+    ## 0表示返回矩阵中每一列的最小值，1表示返回每一行的最小值，即表示
     
-    ## 保存类的自变量矩阵
     self.X = X
+    ## 定义保存类的自变量矩阵
     
-    ## 分别保存类的自变量 X[：,0:1]取所有数据的第m到n-1列数据，即含左不含右
     self.x = X[:,0:1]
     self.y = X[:,1:2]
     self.t = X[:,2:3]
+    ## 分别保存类的自变量 X[：,0:1]取所有数据的第m到n-1列数据，即含左不含右
     
-    ## 分别保存类的因变量
     self.u = u
     self.v = v
+    ## 分别分别保存类的因变量u,v
     
-    ## 保存类的NN层数
     self.layers = layers
-   
-    ## 定义神经网络的参数？
-    self.weights, self.biases = self.initialize_NN(layers)
+    ## 保存类的NN层数变量
     
-    ## 初始化参数，定义变量类型，0.0表示定义变量初值，dtype表示创建一个数据类型对象
+    self.weights, self.biases = self.initialize_NN(layers)
+    ## 定义initialize_NN函数，根据layers变量可导出weights和biases变量
+    
     self.lambda_1 = tf.Variable([0.0], dtype=tf.float32)
     self.lambda_2 = tf.Variable([0.0], dtype=tf.float32)
+    ## 初始化两个参数lambda1和lambda2，0.0表示定义对象的初值，dtype表示定义对象的数据类型
     
-    ## tf.Session用来创建一个新的tensorflow会话
+    self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True))
+    ## tf.Session用来创建一个新的tensorflow会话，用于执行真正的计算
     ## tensorflow的计算图只是描述了计算执行的过程，没有真正执行计算，真正的计算过程是在tensorflow的会话中进行的
     ## Session提供了求解张量，执行操作的运行环境，将计算图转化为不同设备上的执行步骤。包括创建会话（tf.Session）、执行会话（sess.run）、关闭会话（sess.close）
     ## tf.ConfigProto作用是配置tf.Session的运算方式，比如GPU运算或CPU运算
     ## allow_soft_placemente表示当运行设备不满足时，是否自动分配GPU或CPU
     ## log_device_placement表示是否打印设备分配日志
-    self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True))
     
-    ## tf.placeholder是常用的处理输入数据的工具，允许在定义计算图时创建占位符节点，tf.placeholder(dtype,shape=none,name=none)
-    ## dtype指定占位符的数据类型，如tf.float32,tf.int32
-    ## shape指定占位符的形状，如不指定，可接受任意形状的输入数据
-    ## name是给占位符名称指定一个可选的名称
+
     self.x_tf = tf.placeholder(tf.float32, shape=[None, self.x.shape[1]])
     self.y_tf = tf.placeholder(tf.float32, shape=[None, self.y.shape[1]])
     self.t_tf = tf.placeholder(tf.float32, shape=[None, self.t.shape[1]])
+    ## tf.placeholder是常用的处理输入数据的工具，允许在定义计算图时创建占位符节点，tf.placeholder(dtype,shape=none,name=none)
+    ## dtype指定占位符的数据类型，如tf.float32,tf.int32
+    ## shape指定占位符的形状，如不指定，可接受任意形状的输入数据
+    ## name是给占位符名称指定一个可选的名称    
     
     self.u_tf = tf.placeholder(tf.float32, shape=[None, self.u.shape[1]])
     self.v_tf = tf.placeholder(tf.float32, shape=[None, self.v.shape[1]])
