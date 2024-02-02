@@ -65,13 +65,15 @@ class PhysicsInformedNN:
     self.layers = layers
     ## 保存类的NN层数变量
     
+    # 定义initialize_NN函数
     self.weights, self.biases = self.initialize_NN(layers)
-    ## 定义initialize_NN函数，根据layers变量可导出weights和biases变量
+    ## 根据layers变量可导出weights和biases变量
     
     self.lambda_1 = tf.Variable([0.0], dtype=tf.float32)
     self.lambda_2 = tf.Variable([0.0], dtype=tf.float32)
     ## 初始化两个参数lambda1和lambda2，0.0表示定义对象的初值，dtype表示定义对象的数据类型
     
+    # 定义session指令
     self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True))
     ## tf.Session用来创建一个新的tensorflow会话，用于执行真正的计算
     ## tensorflow的计算图只是描述了计算执行的过程，没有真正执行计算，真正的计算过程是在tensorflow的会话中进行的
@@ -79,36 +81,31 @@ class PhysicsInformedNN:
     ## tf.ConfigProto作用是配置tf.Session的运算方式，比如GPU运算或CPU运算
     ## allow_soft_placemente表示当运行设备不满足时，是否自动分配GPU或CPU
     ## log_device_placement表示是否打印设备分配日志
-    
 
     self.x_tf = tf.placeholder(tf.float32, shape=[None, self.x.shape[1]])
     self.y_tf = tf.placeholder(tf.float32, shape=[None, self.y.shape[1]])
-    self.t_tf = tf.placeholder(tf.float32, shape=[None, self.t.shape[1]])
-    ## tf.placeholder是常用的处理输入数据的工具，允许在定义计算图时创建占位符节点，tf.placeholder(dtype,shape=none,name=none)
-    ## dtype指定占位符的数据类型，如tf.float32,tf.int32
-    ## shape指定占位符的形状，如不指定，可接受任意形状的输入数据
-    ## name是给占位符名称指定一个可选的名称    
+    self.t_tf = tf.placeholder(tf.float32, shape=[None, self.t.shape[1]])    
     
     self.u_tf = tf.placeholder(tf.float32, shape=[None, self.u.shape[1]])
     self.v_tf = tf.placeholder(tf.float32, shape=[None, self.v.shape[1]])
+    ## tf.placeholder是常用的处理输入数据的工具，允许在定义计算图时创建占位符节点，tf.placeholder(dtype,shape=none,name=none)
+    ## dtype指定占位符的数据类型，如tf.float32,tf.int32
+    ## shape指定占位符的形状，如不指定，可接受任意形状的输入数据
+    ## name是给占位符名称指定一个可选的名称
     
     ## 构建神经网络的输入输出关系？
     self.u_pred, self.v_pred, self.p_pred, self.f_u_pred, self.f_v_pred = self.net_NS(self.x_tf, self.y_tf, self.t_tf)
+    ## 定义net_NS函数
+    ## net_NS函数根据输入（x,y,t）计算输出（u，v，p）和NS方程的值（f_u_pred f_v_pred）
 
-    ## 定义损失函数的计算关系
+    # 定义损失函数的计算关系
     self.loss = tf.reduce_sum(tf.square(self.u_tf - self.u_pred)) + \
                 tf.reduce_sum(tf.square(self.v_tf - self.v_pred)) + \
                 tf.reduce_sum(tf.square(self.f_u_pred)) + \
                 tf.reduce_sum(tf.square(self.f_v_pred))
+    ## tf.reduce_sum表示对矩阵中所有元素进行求和，并将结果返回至一维
 
     ## 定义优化方法
-    ## tf.contrib.opt.ScipyOptimizerInterface是tensorflow的模块，提供将Scipy优化器与tensorflow集成的接口，可使用Scipy中的优化算法来优化Tensorflow模型中的变量
-    ## L-BFGS-B表示优化方法
-    ## maxiter定义最大迭代次数，int
-    ## maxfun定义函数计算的最大数量，int
-    ## maxcor定义有限内存矩阵的最大可变度量校正数（有限内存BFGS方法不存储完整的hessian，而是使用多项校正数来近似），int
-    ## maxls定义最大的线性搜索步数，int，默认值20
-    ## ftol表示当f^k-f^[(k+1)/max[f^k,f^(k+1),1]]小于ftol值时，迭代停止
     self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(self.loss, 
                                                             method = 'L-BFGS-B', 
                                                             options = {'maxiter': 50000,
@@ -116,41 +113,57 @@ class PhysicsInformedNN:
                                                                        'maxcor': 50,
                                                                        'maxls': 50,
                                                                        'ftol' : 1.0 * np.finfo(float).eps})
+    ## tf.contrib.opt.ScipyOptimizerInterface是tensorflow的模块，提供将Scipy优化器与tensorflow集成的接口，可使用Scipy中的优化算法来优化Tensorflow模型中的变量
+    ## L-BFGS-B表示优化方法
+    ## maxiter定义最大迭代次数，int
+    ## maxfun定义函数计算的最大数量，int
+    ## maxcor定义有限内存矩阵的最大可变度量校正数（有限内存BFGS方法不存储完整的hessian，而是使用多项校正数来近似），int
+    ## maxls定义最大的线性搜索步数，int，默认值20
+    ## ftol表示当f^k-f^[(k+1)/max[f^k,f^(k+1),1]]小于ftol值时，迭代停止
+    ## np.finfo用于生成一定格式，且数值较小的偏置项eps，以避免分母或对数变量为0
     
-    ## 引入adam优化算法：是一个选取全局最优点的优化算法，引入了二次方梯度修正，来最小化损失函数
+    # 定义优化函数
     self.optimizer_Adam = tf.train.AdamOptimizer()
     self.train_op_Adam = self.optimizer_Adam.minimize(self.loss) 
+    ## tf.train.AdamOptimizer表示adam优化算法，是一个选取全局最优点的优化算法，引入了二次方梯度修正，来最小化损失函数
+    ## 通过adam算法最小化loss来进行优化
     
-    ## 初始化模型的参数
+    # 初始化模型的参数，sess.run
     init = tf.global_variables_initializer()
     self.sess.run(init)
 
-    # 定义initialize_NN（用来初始化神经网络中权重、偏移参数值的函数）
+    # 定义initialize_NN（用来根据layers变量来初始化神经网络中权重、偏移参数值的函数）
     def initialize_NN(self, layers):  
       weights = []
       biases = []
-      num_layers = len(layers)  ## num_layers为层向量的长度，即为神经元的层数
+      num_layers = len(layers)  
+      ## num_layers为层向量的长度，即为神经元的层数
       for l in range(0,num_layers-1):
         W = self.xavier_init(size=[layers[l], layers[l+1]]) 
         ## xavier_init()是随机初始化参数的分布范围，此处是初始化每两层之间的权重参数W，是一个l层（m个输入）到l+1层（n个输出）的m*n矩阵
         b = tf.Variable(tf.zeros([1,layers[l+1]], dtype=tf.float32), dtype=tf.float32)  
         ##  tf.zeros()表示生成全为0的tensor张量，此处是初始化每层的偏移参数b,从第l+1层开始（n个输出）是一个1*n的向量，初始值为0
         weights.append(W)
-        biases.append(b)  ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为罗列出所有层之间的权重和偏移参数的矩阵
+        biases.append(b)  
+        ## append表示在变量末尾增加元素，此处即把每次循环的w，b都存进空矩阵weight，biases中，即weight,biases为罗列出所有层之间的权重和偏移参数的矩阵
       return weights, biases
     
-    # 定义xavier_init（用来初始化参数的分布范围的函数），该初始化方法由Bengio等人提出，为了保证前向传播和反向传播时每一层的方差一致，根据每层的输入输出个数来决定参数随机初始化的分布范围
+    # 定义xavier_init（用来初始化参数的分布范围的函数）
+    ## 该初始化方法由Bengio等人提出，为了保证前向传播和反向传播时每一层的方差一致，根据每层的输入输出个数来决定参数随机初始化的分布范围
     def xavier_init(self, size):
-      in_dim = size[0]  ## in_dim表示输入层的参数个数，即上述的m
-      out_dim = size[1]  ## out_dim表示输出层的参数个数，即上述的n       
-      xavier_stddev = np.sqrt(2/(in_dim + out_dim))  ## np.sqrt()计算数组中各元素的平方根，某一层的权重W的方差即为sqrt(2/(该层的输入个数+该层的输出个数))，Bengio论文中有相关推导
+      in_dim = size[0]  
+      ## in_dim表示输入层的参数个数，即上述的m
+      out_dim = size[1]  
+      ## out_dim表示输出层的参数个数，即上述的n       
+      xavier_stddev = np.sqrt(2/(in_dim + out_dim))  
+      ## np.sqrt()计算数组中各元素的平方根，某一层的权重W的方差即为sqrt(2/(该层的输入个数+该层的输出个数))，Bengio论文中有相关推导
       return tf.Variable(tf.truncated_normal([in_dim, out_dim], stddev=xavier_stddev), dtype=tf.float32)
       ## tf.truncated_normal表示截断地产生正态分布的函数（平均值、标准差可设定），产生的值如果与均值之差大于2倍标准差则重新选择
 
     # 定义neural_net，用于构建神经网络的计算关系（从输入算到输出）
     def neural_net(self, X, weights, biases):
-      num_layers = len(weights) + 1  ## NN的总层数
-      
+      num_layers = len(weights) + 1  
+      ## NN的总层数
       H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0  
       ## self.1b表示自变量（x,y,t）的最小值向量，self.ub表示自变量（x,y,t）的最大值向量
       ## 对初始的自变量矩阵进行归一化处理
@@ -210,6 +223,9 @@ class PhysicsInformedNN:
     ## %.3e表示科学计数法，保留三位小数
     ## %.3f表四常规计数法，保留三位小数
     ## %.5f表示常规计数法，保留五位小数
+    
+    # 定义
+    def train(self, nIter): 
 
 
 
