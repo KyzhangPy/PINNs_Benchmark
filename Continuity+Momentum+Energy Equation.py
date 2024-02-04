@@ -227,25 +227,44 @@ class PhysicsInformedNN:
     ## %.3f表示常规计数法，保留三位小数
     ## %.5f表示常规计数法，保留五位小数
     
-    # 定义
+    # 定义训练函数train
     def train(self, nIter): 
       
       tf_dict = {self.x_tf: self.x, self.y_tf: self.y, self.t_tf: self.t,
                  self.u_tf: self.u, self.v_tf: self.v}
-      ## 定义字典，
+      ## 定义字典，创建键值对，键值对是一种数据结构，由键和与之关联的值组成
+      ## 形式的意义为tf_dict = {变量1：值1，变量2：值2，变量3：值3}
+      ## 此处即创建一系列
       
       start_time = time.time()
       ## time.time()表示当前时间的时间戳，即1970年1月1日00:00:00到当前时间的秒数的浮点数
       
       for it in range(nIter):
         self.sess.run(self.train_op_Adam, tf_dict)
-         
-        # Print
+        ## 运行session
+        
         if it % 10 == 0:
+        # it % 10 == 0 表示取余，即每十步记录一次
           elapsed = time.time() - start_time
           loss_value = self.sess.run(self.loss, tf_dict)
           lambda_1_value = self.sess.run(self.lambda_1)
           lambda_2_value = self.sess.run(self.lambda_2)
+          print('It: %d, Loss: %.3e, l1: %.3f, l2: %.5f, Time: %.2f' % 
+                (it, loss_value, lambda_1_value, lambda_2_value, elapsed))
+          ## 输出迭代步数值、Loss值、lambda_1的值、lambda_2的值
+          ## %d表示十进制整数；%.3e表示科学计数法，保留三位小数；%.3f表示常规计数法，保留三位小数；%.5f表示常规计数法，保留五位小数；%.2f表示常规计数法，保留两位小数；
+          start_time = time.time()
+
+      self.optimizer.minimize(self.sess,
+                              feed_dict = tf_dict,
+                              fetches = [self.loss, self.lambda_1, self.lambda_2],
+                              loss_callback = self.callback)
+      ## feed_dict是给使用spaceholder创建出来的tensor赋值
+      ## fetches表示获取操作op所对应的结果
+
+    # 定于预测函数predict
+    def predict(self, x_star, y_star, t_star):
+
 
        
 
