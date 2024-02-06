@@ -264,6 +264,20 @@ class PhysicsInformedNN:
 
     # 定于预测函数predict
     def predict(self, x_star, y_star, t_star):
+      
+      tf_dict = {self.x_tf: x_star, self.y_tf: y_star, self.t_tf: t_star}
+      ## 创建键值对，放置x_star，y_star，t_star
+      
+      u_star = self.sess.run(self.u_pred, tf_dict)
+      v_star = self.sess.run(self.v_pred, tf_dict)
+      p_star = self.sess.run(self.p_pred, tf_dict)
+      
+      return u_star, v_star, p_star
+
+
+      
+
+
 
 
        
