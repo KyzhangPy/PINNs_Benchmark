@@ -262,7 +262,7 @@ class PhysicsInformedNN:
       ## feed_dict是给使用spaceholder创建出来的tensor赋值
       ## fetches表示获取操作op所对应的结果
 
-    # 定于预测函数predict
+    # 定义预测函数predict
     def predict(self, x_star, y_star, t_star):
       
       tf_dict = {self.x_tf: x_star, self.y_tf: y_star, self.t_tf: t_star}
@@ -273,6 +273,8 @@ class PhysicsInformedNN:
       p_star = self.sess.run(self.p_pred, tf_dict)
       
       return u_star, v_star, p_star
+
+    # 
 
 
       
