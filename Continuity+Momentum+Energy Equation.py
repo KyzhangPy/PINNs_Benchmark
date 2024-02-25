@@ -274,8 +274,6 @@ class PhysicsInformedNN:
       
       return u_star, v_star, p_star
 
-    # 
-
 
       
 
