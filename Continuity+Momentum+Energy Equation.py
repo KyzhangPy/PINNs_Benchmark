@@ -297,11 +297,15 @@ def plot_solution(X_star, u_star, index):
   ## np.meshgrid是一个在给定多维网格状情况下生成网格点坐标的函数，它将向量生成为矩阵，并返回多个坐标矩阵的列表
 
   U_star = griddata(X_star, u_star.flatten(), (X, Y), method='cubic')
-  ## 二维插值函数griddata，
+  ## 插值函数griddata
+  ## 
   
   plt.figure(index)
   plt.pcolor(X,Y,U_star, cmap = 'jet')
   plt.colorbar()
+
+# 定义
+def axisEqual3D(ax):
       
 
       
