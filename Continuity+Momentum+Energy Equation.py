@@ -5,17 +5,17 @@
 # 导入sys库
 import sys 
 # 临时添加本地库（添加import库的搜索路径），在列表的任意位置添加目录，新添加的目录会优先于其它目录被import检查
-sys.path.insert(0, '../../main/') 
+sys.path.insert(0, '../../main/')  ## 此处需手动输入位置路径
 
 # 调库
 import tensorflow as tf 
 ## 调用tensorflow开发工具
 import numpy as np 
-## 调用科学计算工具 
+## 调用numpy科学计算工具 
 import matplotlib.pyplot as plt 
 ## 调用python的画图功能库
 import scipy.io 
-## 调用物理常量/单位库、常用的输入输出函数
+## 调用物理常量/单位库scipy、常用的输入输出函数
 from scipy.interpolate import griddata 
 ## 调用griddata差值函数（非规则网格的数据差值）
 import time 
@@ -35,7 +35,7 @@ import matplotlib.gridspec as gridspec
 # 设置随机数种子
 np.random.seed(1234)
 tf.set_random_seed(1234)
-随机种子应为整数
+## 随机种子应为整数,手动输入
 
 # 定义类（类是一种数据类型，代表着一类具有相同属性和方法的对象的集合）
 class PhysicsInformedNN:
@@ -48,22 +48,24 @@ class PhysicsInformedNN:
     
     self.lb = X.min(0)
     self.ub = X.max(0)
-    ## 0表示返回矩阵中每一列的最小值，1表示返回每一行的最小值，即表示
+    ## 0表示返回矩阵中每一列的最小值，1表示返回每一行的最小值
+    ## self.1b即为[x,y,t]的最小值
+    ## self.ub即为[x,y,t]的最大值
     
     self.X = X
-    ## 定义保存类的自变量矩阵
+    ## 保存类的自变量矩阵X
     
     self.x = X[:,0:1]
     self.y = X[:,1:2]
     self.t = X[:,2:3]
-    ## 分别保存类的自变量 X[：,0:1]取所有数据的第m到n-1列数据，即含左不含右
+    ## 分别保存类的自变量 X[：,0:1]取所有数据的第m到n-1列数据，即含左不含右，分别保存类的向量x,y,t
     
     self.u = u
     self.v = v
-    ## 分别分别保存类的因变量u,v
+    ## 分别保存类的因变量u,v
     
     self.layers = layers
-    ## 保存类的NN层数变量
+    ## 保存类的NN层数向量layers
     
     # 定义initialize_NN函数
     self.weights, self.biases = self.initialize_NN(layers)
@@ -72,6 +74,7 @@ class PhysicsInformedNN:
     self.lambda_1 = tf.Variable([0.0], dtype=tf.float32)
     self.lambda_2 = tf.Variable([0.0], dtype=tf.float32)
     ## 初始化两个参数lambda1和lambda2，0.0表示定义对象的初值，dtype表示定义对象的数据类型
+    ## 此处lambda1和lambda2分别用来表示NS方程中的两个未知参数
     
     # 定义session指令
     self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True))
@@ -82,6 +85,7 @@ class PhysicsInformedNN:
     ## allow_soft_placemente表示当运行设备不满足时，是否自动分配GPU或CPU
     ## log_device_placement表示是否打印设备分配日志
 
+    # 定义占位符
     self.x_tf = tf.placeholder(tf.float32, shape=[None, self.x.shape[1]])
     self.y_tf = tf.placeholder(tf.float32, shape=[None, self.y.shape[1]])
     self.t_tf = tf.placeholder(tf.float32, shape=[None, self.t.shape[1]])    
@@ -92,18 +96,21 @@ class PhysicsInformedNN:
     ## dtype指定占位符的数据类型，如tf.float32,tf.int32
     ## shape指定占位符的形状，如不指定，可接受任意形状的输入数据
     ## name是给占位符名称指定一个可选的名称
+    ## shape[0]表示矩阵的行数，shape[1]表示矩阵的列数
+    ## shape=[None, self.x.shape[1]]表示接受任意行、1列的输入数据
     
-    ## 构建神经网络的输入输出关系？
+    # 构建神经网络的输入输出关系
     self.u_pred, self.v_pred, self.p_pred, self.f_u_pred, self.f_v_pred = self.net_NS(self.x_tf, self.y_tf, self.t_tf)
     ## 定义net_NS函数
-    ## net_NS函数根据输入（x,y,t）计算输出（u，v，p）和NS方程的值（f_u_pred f_v_pred）
+    ## net_NS函数根据输入的(x,y,t)计算输出(u,v,p)和NS方程的值(f_u_pred,f_v_pred)
 
-    # 定义损失函数的计算关系
+    # 定义损失函数的计算方法
     self.loss = tf.reduce_sum(tf.square(self.u_tf - self.u_pred)) + \
                 tf.reduce_sum(tf.square(self.v_tf - self.v_pred)) + \
                 tf.reduce_sum(tf.square(self.f_u_pred)) + \
                 tf.reduce_sum(tf.square(self.f_v_pred))
     ## tf.reduce_sum表示对矩阵中所有元素进行求和，并将结果返回至一维
+    ## tf.square表示对矩阵中的每个元素求平方
 
     ## 定义优化方法
     self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(self.loss, 
@@ -174,7 +181,7 @@ class PhysicsInformedNN:
         W = weights[l]
         b = biases[l]
         H = tf.tanh(tf.add(tf.matmul(H, W), b))  
-        ## tf.matmul表示矩阵相乘，tf.add表示张量矩阵相加
+        ## tf.matmul表示矩阵相乘，tf.add表示矩阵相加
         ## 用循环的方式构建神经网络的计算关系，逐层计算
         ## 激活函数是tanh，其值在-1到1的范围内
       W = weights[-1]  ## 权重参数矩阵weights的最后一行，即最后两层之间的权重参数
@@ -192,11 +199,11 @@ class PhysicsInformedNN:
       ## axis表示拼接的维度，axis=0,1,2,...，0表示在第0个维度拼接，1表示在第1个维度拼接，第0个维度为最外层方括号下的子集，第1个维度为倒数第二层方括号下的子集
       ## 此处，输出数据的个数是2个，即p和psi
       ## 采用neural_net函数，根据输入层的[x,y,t]和[weights,biases]计算到输出层psi_and_p
-      psi = psi_and_p[:,0:1]  ##第1维中取所有数据，第2维中取第0个数据，此处指速度张量
+      psi = psi_and_p[:,0:1]  ##第1维中取所有数据，第2维中取第0个数据，此处指位移值
       p = psi_and_p[:,1:2]  ##第1维中取所有数据，第2维中取第1个数据，此处指压力值
       
-      u = tf.gradients(psi, y)[0]  ## 速度对y方向的偏导为u？？？
-      v = -tf.gradients(psi, x)[0]  ## 速度对x方向的偏导为v？？？
+      u = tf.gradients(psi, y)[0]  ## 位移对y方向的偏导为u？？？
+      v = -tf.gradients(psi, x)[0]  ## 位移对x方向的偏导为v？？？
 
       ## u对x,y,t的二阶偏导
       u_t = tf.gradients(u, t)[0]
@@ -234,7 +241,6 @@ class PhysicsInformedNN:
                  self.u_tf: self.u, self.v_tf: self.v}
       ## 定义字典，创建键值对，键值对是一种数据结构，由键和与之关联的值组成
       ## 形式的意义为tf_dict = {变量1：值1，变量2：值2，变量3：值3}
-      ## 此处即创建一系列
       
       start_time = time.time()
       ## time.time()表示当前时间的时间戳，即1970年1月1日00:00:00到当前时间的秒数的浮点数
@@ -242,6 +248,7 @@ class PhysicsInformedNN:
       for it in range(nIter):
         self.sess.run(self.train_op_Adam, tf_dict)
         ## 运行session
+        ## tensorflow的赋值操作只是确定一个空壳子，需要使用sess.run来让数据流动起来
         
         if it % 10 == 0:
         # it % 10 == 0 表示取余，即每十步记录一次
@@ -274,6 +281,28 @@ class PhysicsInformedNN:
       
       return u_star, v_star, p_star
 
+# 定义绘图求解域的函数、以及绘图
+def plot_solution(X_star, u_star, index):
+
+  lb = X_star.min(0)
+  ## x_star数据中列的最小值
+  ub = X_star.max(0)
+  ## x_star数据中列的最大值
+  nn = 200
+  ## 数据分隔值总数
+  x = np.linspace(lb[0], ub[0], nn)
+  y = np.linspace(lb[1], ub[1], nn)
+  ## linspace是通过定义均匀间隔创建数值序列，指定间隔的起止点、终止点以及分隔值总数，返回类均匀分布的数值序列
+  X, Y = np.meshgrid(x,y)
+  ## np.meshgrid是一个在给定多维网格状情况下生成网格点坐标的函数，它将向量生成为矩阵，并返回多个坐标矩阵的列表
+
+  U_star = griddata(X_star, u_star.flatten(), (X, Y), method='cubic')
+  ## 二维插值函数griddata，
+  
+  plt.figure(index)
+  plt.pcolor(X,Y,U_star, cmap = 'jet')
+  plt.colorbar()
+      
 
       
 
