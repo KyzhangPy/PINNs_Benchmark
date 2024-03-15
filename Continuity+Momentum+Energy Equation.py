@@ -9,9 +9,9 @@ sys.path.insert(0, '../../main/')  ## 此处需手动输入位置路径
 
 # 调库
 import tensorflow as tf 
-## 调用tensorflow开发工具
+## 调用tensorflow
 import numpy as np 
-## 调用numpy科学计算工具 
+## 调用numpy-科学计算工具 
 import matplotlib.pyplot as plt 
 ## 调用python的画图功能库
 import scipy.io 
@@ -85,7 +85,7 @@ class PhysicsInformedNN:
     ## allow_soft_placemente表示当运行设备不满足时，是否自动分配GPU或CPU
     ## log_device_placement表示是否打印设备分配日志
 
-    # 定义占位符
+    # 定义占位符，即x,y,t,u,v的输入值
     self.x_tf = tf.placeholder(tf.float32, shape=[None, self.x.shape[1]])
     self.y_tf = tf.placeholder(tf.float32, shape=[None, self.y.shape[1]])
     self.t_tf = tf.placeholder(tf.float32, shape=[None, self.t.shape[1]])    
@@ -101,8 +101,7 @@ class PhysicsInformedNN:
     
     # 构建神经网络的输入输出关系
     self.u_pred, self.v_pred, self.p_pred, self.f_u_pred, self.f_v_pred = self.net_NS(self.x_tf, self.y_tf, self.t_tf)
-    ## 定义net_NS函数
-    ## net_NS函数根据输入的(x,y,t)计算输出(u,v,p)和NS方程的值(f_u_pred,f_v_pred)
+    ## net_NS函数根据输入的(x,y,t)计算输出(u,v,p)和NS方程的残差值(f_u_pred,f_v_pred)
 
     # 定义损失函数的计算方法
     self.loss = tf.reduce_sum(tf.square(self.u_tf - self.u_pred)) + \
@@ -278,16 +277,17 @@ class PhysicsInformedNN:
       u_star = self.sess.run(self.u_pred, tf_dict)
       v_star = self.sess.run(self.v_pred, tf_dict)
       p_star = self.sess.run(self.p_pred, tf_dict)
+      ## u_star,v_star,p_star表示神经网络的输出值
       
       return u_star, v_star, p_star
 
-# 定义绘图求解域的函数、以及绘图
+# 定义求解域的云图绘制函数，根据神经网络的输入输出值绘制求解域的云图
 def plot_solution(X_star, u_star, index):
 
   lb = X_star.min(0)
-  ## x_star数据中列的最小值
+  ## X_star数据中列的最小值
   ub = X_star.max(0)
-  ## x_star数据中列的最大值
+  ## X_star数据中列的最大值
   nn = 200
   ## 数据分隔值总数
   x = np.linspace(lb[0], ub[0], nn)
@@ -297,12 +297,15 @@ def plot_solution(X_star, u_star, index):
   ## np.meshgrid是一个在给定多维网格状情况下生成网格点坐标的函数，它将向量生成为矩阵，并返回多个坐标矩阵的列表
 
   U_star = griddata(X_star, u_star.flatten(), (X, Y), method='cubic')
-  ## 插值函数griddata
-  ## 
+  ## 插值函数griddata，X_star表示数据的坐标，u_star.flatten()表示数据的值，(X,Y)表示目标网格的横纵坐标，method表示插值方法
+  ## flatten()表示返回一个一维数组，默认按行降维
   
-  plt.figure(index)
+  plt.figure(index) 
+  ## plt.figure()表示创建一个画布
   plt.pcolor(X,Y,U_star, cmap = 'jet')
+  ## 
   plt.colorbar()
+  ## 绘图
 
 # 定义
 def axisEqual3D(ax):
