@@ -2,7 +2,7 @@
 @author: Zhang Shuo
 ###
 
-# 导入sys库
+# 调入sys库
 import sys
 # 临时添加本地库（添加import库的搜索路径），在列表的任意位置添加目录，新添加的目录会优先于其它目录被import检查
 sys.path.insert(0, '../Utilities/')## 此处需手动输入位置路径
@@ -16,8 +16,9 @@ from collections import OrderedDict
 import numpy as np
 ## 调用numpy-科学计算工具
 import matplotlib.pyplot as plt
-##
+## 调用pyplot-画图功能库
 import scipy.io
+## 调用scipy.io-
 from scipy.interpolate import griddata
 from plotting import newfig, savefig
 from mpl_toolkits.axes_grid1 import make_axes_locatable
