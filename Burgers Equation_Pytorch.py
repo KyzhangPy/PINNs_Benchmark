@@ -14,15 +14,17 @@ from collections import OrderedDict
 ## 调用OrderedDict，OrderedDict是Python标准库中的一个数据结构，是一个有序的字典，可以记住元素的插入顺序，可以按照元素插入的顺序来迭代字典中的键值对
 
 import numpy as np
-## 调用numpy-科学计算工具
+## 调用numpy-科学计算工具库
 import matplotlib.pyplot as plt
 ## 调用pyplot-画图功能库
 import scipy.io
 ## 调用scipy.io-物理常量/单位库、常用的输入输出函数库
 from scipy.interpolate import griddata
-
+## 调用griddata-差值函数库（非规则网格的数据差值）
 from plotting import newfig, savefig
+
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 import matplotlib.gridspec as gridspec
 import warnings
 
