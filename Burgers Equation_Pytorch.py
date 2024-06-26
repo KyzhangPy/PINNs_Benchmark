@@ -24,8 +24,9 @@ from scipy.interpolate import griddata
 from plotting import newfig, savefig
 ## 调用plotting-可以结合各种视觉元素和工具创建可视化图形的库
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+## 调用axes_grid1-辅助类几何工具，可以用于显示多个图像
 import matplotlib.gridspec as gridspec
+
 import warnings
 
 warnings.filterwarnings('ignore')
