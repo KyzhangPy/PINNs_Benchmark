@@ -18,8 +18,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 ## 调用pyplot-画图功能库
 import scipy.io
-## 调用scipy.io-
+## 调用scipy.io-物理常量/单位库、常用的输入输出函数库
 from scipy.interpolate import griddata
+
 from plotting import newfig, savefig
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
