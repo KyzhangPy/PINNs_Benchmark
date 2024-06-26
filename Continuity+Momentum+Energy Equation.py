@@ -299,17 +299,6 @@ def plot_solution(X_star, u_star, index):
   U_star = griddata(X_star, u_star.flatten(), (X, Y), method='cubic')
   ## 插值函数griddata，X_star表示数据的坐标，u_star.flatten()表示数据的值，(X,Y)表示目标网格的横纵坐标，method表示插值方法
   ## flatten()表示返回一个一维数组，默认按行降维
-  
-  plt.figure(index) 
-  ## plt.figure()表示创建一个画布
-  plt.pcolor(X,Y,U_star, cmap = 'jet')
-  ## 
-  plt.colorbar()
-  ## 绘图
-
-# 定义
-def axisEqual3D(ax):
-      
 
       
 
