@@ -1,2 +1,2 @@
-## Tensorflow 1.0 version
-This is a programm for
+## Tensorflow 1.0 - Code definition
+PINN for N-S equations benchmark
