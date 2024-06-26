@@ -22,7 +22,7 @@ import scipy.io
 from scipy.interpolate import griddata
 ## 调用griddata-差值函数库（非规则网格的数据差值）
 from plotting import newfig, savefig
-
+## 调用plotting-可以结合各种视觉元素和工具创建可视化图形的库
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import matplotlib.gridspec as gridspec
