@@ -1,2 +1,2 @@
-## Tensorflow 1.0 - Code definition
-PINN for N-S equations benchmark
+##  Code definition
+This is a simple implementation of the Physics-informed Neural Networks (PINNs) using Tensorflow.
