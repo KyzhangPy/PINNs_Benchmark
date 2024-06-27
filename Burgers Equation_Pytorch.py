@@ -63,10 +63,9 @@ class DNN(torch.nn.Module):
         layer_list = list()
         # 为序列中的每个元素都分配一个数字(它的位置index)
         for i in range(self.depth - 1):
-            layer_list.append(
-                ('layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]))
-            )
-            
+            layer_list.append(  ( 'layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]) )  )
+            # 
+            layer_list.append(  ( 'activation_%d' % i, self.activation() )  )
 
 
 
