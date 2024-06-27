@@ -48,8 +48,20 @@ class DNN(torch.nn.Module):
 # 定义的神经网络模型类DNN，继承自nn.Module
 # nn.Module是PyTorch中所有神经网络模型的基类
     def __init__(self, layers):
-    # 构造函数，用于初始化类的实例，layers是构造函数的参数，self指的是实例Instance本身
+    # 构造一个初始化函数，用于初始化类的实例，layers是该函数的参数
+    # self指的是实例Instance本身，python类中规定：函数的第一个参数是实例对象本身，并且约定俗成，其名字写为self，不能省略
         super(DNN, self).__init__()
+        # 类DNN把类nn.Module的__init__()放到自己的__init__()当中，类DNN就有了类nn.Module的__init__()的那些东西
+        # 对继承自父类nn.Module的属性进行初始化，而且是用nn.Module的初始化方法来初始化继承的属性
+
+        self.depth = len(layers) - 1
+        # 定义参数：depth（DNN层数）
+
+        self.activation = torch.nn.Tanh
+        # 定义参数：activation（激活函数）
+        
+        layer_list = list()
+        
 
 
 
