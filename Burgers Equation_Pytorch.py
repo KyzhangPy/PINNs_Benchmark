@@ -61,11 +61,12 @@ class DNN(torch.nn.Module):
         # 定义参数：activation（激活函数）
         
         layer_list = list()
-        # 为序列中的每个元素都分配一个数字(它的位置index)
         for i in range(self.depth - 1):
             layer_list.append(  ( 'layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]) )  )
-            # 
+            # nn.Linear(in_feature,out_feature,bias)表示线性变换
+            # in_feature表示输入Tensor最后一维的通道数，int型，out_feature表示输出Tensor最后一维的通道数，int型，bias表示是否添加bias偏置，bool型
             layer_list.append(  ( 'activation_%d' % i, self.activation() )  )
+            #
 
 
 
