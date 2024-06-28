@@ -60,10 +60,10 @@ class DNN(torch.nn.Module):
         # 对继承自父类nn.Module的属性进行初始化，而且是用nn.Module的初始化方法来初始化继承的属性
 
         self.depth = len(layers) - 1
-        # 定义参数：depth（DNN层数）
+        # 定义depth（DNN层数）
 
         self.activation = torch.nn.Tanh
-        # 定义参数：activation（激活函数）
+        # 定义activation（激活函数）
         
         layer_list = list()
         # 创建表达layers结构的空张量
@@ -283,8 +283,6 @@ model.train(10000)
 
 
 ### 可视化
-""" The aesthetic setting has changed. """
-
 ####### Row 0: u(t,x) ################## 
 
 fig = plt.figure(figsize=(9, 5))
