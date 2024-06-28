@@ -143,7 +143,23 @@ class PhysicsInformedNN():
              create_graph=True
          )[0]
          u_xx = torch.autograd.grad(
-             
+             u_x, x,
+             grad_outputs=torch.ones_like(u_x),
+             retain_graph=True,
+             create_graph=True
+         )[0]
+         
+         f = u_t + lambda_1 * u * u_x - lambda_2 * u_xx
+         return f    
+     
+     def loss_func(self):
+         u_pred = self.net_u(self.x, self.t)
+         f_pred = self.net_f(self.x, self.t)
+         loss = torch.mean((self.u - u_pred) ** 2) + torch.mean(f_pred ** 2)
+         self.optimizer.zero_grad()
+         loss.backward()
+         
+         self.iter += 1
 
 
 
