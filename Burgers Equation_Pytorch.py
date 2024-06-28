@@ -160,6 +160,76 @@ class PhysicsInformedNN():
          loss.backward()
          
          self.iter += 1
+         if self.iter % 100 == 0:
+             print(
+                 'Loss: %e, l1: %.5f, l2: %.5f' %
+                 (
+                     loss.item(),
+                     self.lambda_1.item(),
+                     torch.exp(self.lambda_2.detach()).item()
+                 )
+             )
+         return loss
+     
+     def train(self, nIter):
+         self.dnn.train()
+         for epoch in range(nIter):
+             u_pred = self.net_u(self.x, self.t)
+             f_pred = self.net_f(self.x, self.t)
+             loss = torch.mean((self.u - u_pred) ** 2) + torch.mean(f_pred ** 2)
+             
+             # 反向传播与优化
+             self.optimizer_Adam.zero_grad()
+             loss.backward()
+             self.optimizer_Adam.step()
+             
+             if epoch % 100 == 0:
+                 print(
+                     'It: %d, Loss: %.3e, Lambda_1: %.3f, Lambda_2: %.6f' % 
+                     (
+                         epoch,
+                         loss.item(),
+                         self.lambda_1.item(),
+                         torch.exp(self.lambda_2).item()
+                     )
+                 )
+         
+         # 反向传播与优化
+         self.optimizer.step(self.loss_func)
+
+     def predict(self, X):
+         x = torch.tensor(X[:, 0:1], requires_grad=True).float().to(device)
+         t = torch.tensor(X[:, 1:2], requires_grad=True).float().to(device)
+         
+         self.dnn.eval()
+         u = self.net_u(x, t)
+         f = self.net_f(x, t)
+         u = u.detach().cpu().numpy()
+         f = f.detach().cpu().numpy()
+         return u, f
+
+### 配置
+nu = 0.01/np.pi
+N_u = 2000
+layers = [2, 20, 20, 20, 20, 20, 20, 20, 20, 1]
+
+data = scipy.io.loadmat('data/burgers_shock.mat')
+
+t = data['t'].flatten()[:,None]
+x = data['x'].flatten()[:,None]
+Exact = np.real(data['usol']).T
+
+X, T = np.meshgrid(x,t)
+
+X_star = np.hstack((X.flatten()[:,None], T.flatten()[:,None]))
+u_star = Exact.flatten()[:,None]
+
+# Doman bounds
+lb = X_star.min(0)
+ub = X_star.max(0) 
+
+
+             
 
 
 
