@@ -2,10 +2,12 @@
 @author: Zhang Shuo
 ###
 
+
 ### 调入sys库
 import sys
 # 临时添加本地库（添加import库的搜索路径），在列表的任意位置添加目录，新添加的目录会优先于其它目录被import检查
 sys.path.insert(0, '../Utilities/')## 此处需手动输入位置路径
+
 
 ### 调库
 import torch
@@ -27,6 +29,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 # 导入gridspec-专门指定画布中的子图位置的模块
 
+
 ### 导入warnings模块-用于处理警告消息，使程序在运行时可捕捉并处理一些非致命性问题，不中断程序的执行，通常用于提醒开发者一些潜在问题或不推荐用法，但不阻止程序继续执行
 import warnings
 warnings.filterwarnings('ignore')
@@ -34,14 +37,17 @@ warnings.filterwarnings('ignore')
 # warnings.filterwarnings("ignore", category=DeprecationWarning)-忽略特定类型的警告
 # warnings.filterwarnings("ignore", message="some specific warning message")-忽略特定消息的警告
 
+
 ### 设置随机数种子
 np.random.seed(1234)
+
 
 ### 设置计算单元CUDA
 if torch.cuda.is_available():
     device = torch.device('cuda')
 else:
     device = torch.device('cpu')
+
 
 ### 定义神经网络模型的类DNN，继承自nn.Module
 class DNN(torch.nn.Module):
@@ -80,6 +86,7 @@ class DNN(torch.nn.Module):
     def forward(self, x):
         out = self.layers(x)
         return out
+
 
 ### 定义PINN神经网络的类
 class PhysicsInformedNN():
@@ -208,6 +215,7 @@ class PhysicsInformedNN():
          f = f.detach().cpu().numpy()
          return u, f
 
+
 ### 配置
 nu = 0.01/np.pi
 N_u = 2000
@@ -229,10 +237,94 @@ lb = X_star.min(0)
 ub = X_star.max(0) 
 
 
-             
+### 无噪声数据训练
+%%time
+
+noise = 0.0            
+
+# 创建训练集
+idx = np.random.choice(X_star.shape[0], N_u, replace=False)
+X_u_train = X_star[idx,:]
+u_train = u_star[idx,:]
+
+# 训练
+model = PhysicsInformedNN(X_u_train, u_train, layers, lb, ub)
+model.train(0)
 
 
+### 误差估计
+u_pred, f_pred = model.predict(X_star)
 
+error_u = np.linalg.norm(u_star-u_pred,2)/np.linalg.norm(u_star,2)
+
+U_pred = griddata(X_star, u_pred.flatten(), (X, T), method='cubic')
+
+lambda_1_value = model.lambda_1.detach().cpu().numpy()
+lambda_2_value = model.lambda_2.detach().cpu().numpy()
+lambda_2_value = np.exp(lambda_2_value)
+
+error_lambda_1 = np.abs(lambda_1_value - 1.0) * 100
+error_lambda_2 = np.abs(lambda_2_value - nu) / nu * 100
+
+print('Error u: %e' % (error_u))    
+print('Error l1: %.5f%%' % (error_lambda_1))                             
+print('Error l2: %.5f%%' % (error_lambda_2))  
+
+
+### 带噪声数据训练
+noise = 0.01    
+
+# 创建训练集
+u_train = u_train + noise*np.std(u_train)*np.random.randn(u_train.shape[0], u_train.shape[1])
+
+# 训练
+model = PhysicsInformedNN(X_u_train, u_train, layers, lb, ub)
+model.train(10000)
+
+
+### 可视化
+""" The aesthetic setting has changed. """
+
+####### Row 0: u(t,x) ################## 
+
+fig = plt.figure(figsize=(9, 5))
+ax = fig.add_subplot(111)
+
+h = ax.imshow(U_pred.T, interpolation='nearest', cmap='rainbow', 
+              extent=[t.min(), t.max(), x.min(), x.max()], 
+              origin='lower', aspect='auto')
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="5%", pad=0.10)
+cbar = fig.colorbar(h, cax=cax)
+cbar.ax.tick_params(labelsize=15) 
+
+ax.plot(
+    X_u_train[:,1], 
+    X_u_train[:,0], 
+    'kx', label = 'Data (%d points)' % (u_train.shape[0]), 
+    markersize = 4,  # marker size doubled
+    clip_on = False,
+    alpha=.5
+)
+
+line = np.linspace(x.min(), x.max(), 2)[:,None]
+ax.plot(t[25]*np.ones((2,1)), line, 'w-', linewidth = 1)
+ax.plot(t[50]*np.ones((2,1)), line, 'w-', linewidth = 1)
+ax.plot(t[75]*np.ones((2,1)), line, 'w-', linewidth = 1)
+
+ax.set_xlabel('$t$', size=20)
+ax.set_ylabel('$x$', size=20)
+ax.legend(
+    loc='upper center', 
+    bbox_to_anchor=(0.9, -0.05), 
+    ncol=5, 
+    frameon=False, 
+    prop={'size': 15}
+)
+ax.set_title('$u(t,x)$', fontsize = 20) # font size doubled
+ax.tick_params(labelsize=15)
+
+plt.show()
 
 
 
