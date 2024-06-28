@@ -43,9 +43,8 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-### 定义类
+### 定义神经网络模型的类DNN，继承自nn.Module
 class DNN(torch.nn.Module):
-# 定义的神经网络模型类DNN，继承自nn.Module
 # nn.Module是PyTorch中所有神经网络模型的基类
     def __init__(self, layers):
     # 构造一个初始化函数，用于初始化类的实例，layers是该函数的参数
@@ -61,12 +60,93 @@ class DNN(torch.nn.Module):
         # 定义参数：activation（激活函数）
         
         layer_list = list()
+        # 创建表达layers结构的空张量
         for i in range(self.depth - 1):
             layer_list.append(  ( 'layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]) )  )
             # nn.Linear(in_feature,out_feature,bias)表示线性变换
             # in_feature表示输入Tensor最后一维的通道数，int型，out_feature表示输出Tensor最后一维的通道数，int型，bias表示是否添加bias偏置，bool型
+            # 表示在layer_list的第i列插入上述线性变换
             layer_list.append(  ( 'activation_%d' % i, self.activation() )  )
-            #
+            # 表示在layer_list的
+        layer_list.append(  ( 'layer_%d' % (self.depth - 1), torch.nn.Linear(layers[-2], layers[-1]) )  )
+        layerDict = OrderedDict(layer_list)
+        # OrderedDict()是一个特殊的字典子类，保持了字典中元素被插入时的顺序，当你遍历一个OrderedDict时，元素会按照它们被插入的顺序出现，而不是按照它们的键的排序顺序
+
+        self.layers = torch.nn.Sequential(layerDict)
+        # nn.Sequential是一个序列容器，可以看成是有多个函数运算对象，串联成的神经网络，其返回的是Module类型的神经网络对象
+        # 与一层一层的单独调用模块组成序列相比，nn.Sequential() 可以允许将整个容器视为单个模块（即相当于把多个模块封装成一个模块）
+        # nn.Sequential()按照内部模块的顺序自动依次计算并输出结果，这就意味着我们可以利用nn.Sequential() 自定义自己的网络层
+    
+    def forward(self, x):
+        out = self.layers(x)
+        return out
+
+### 定义PINN神经网络的类
+class PhysicsInformedNN():
+     def __init__(self, X, u, layers, lb, ub):
+
+         # 边界条件
+         self.lb = torch.tensor(lb).float().to(device)
+         self.ub = torch.tensor(ub).float().to(device)
+         
+         # 数据
+         self.x = torch.tensor(X[:, 0:1], requires_grad=True).float().to(device)
+         self.t = torch.tensor(X[:, 1:2], requires_grad=True).float().to(device)
+         self.u = torch.tensor(u).float().to(device)
+
+         # 设置
+         self.lambda_1 = torch.tensor([0.0], requires_grad=True).to(device)
+         self.lambda_2 = torch.tensor([-6.0], requires_grad=True).to(device)
+         
+         self.lambda_1 = torch.nn.Parameter(self.lambda_1)
+         self.lambda_2 = torch.nn.Parameter(self.lambda_2)
+
+         # Deep Neural Network
+         self.dnn = DNN(layers).to(device)
+         self.dnn.register_parameter('lambda_1', self.lambda_1)
+         self.dnn.register_parameter('lambda_2', self.lambda_2)
+         
+         # 优化
+         self.optimizer = torch.optim.LBFGS(
+             self.dnn.parameters(),
+             lr=1.0,
+             max_iter=50000,
+             max_eval=50000,
+             history_size=50,
+             tolerance_grad=1e-5,
+             tolerance_change=1.0 * np.finfo(float).eps,
+             line_search_fn="strong_wolfe"
+         )
+         
+         self.optimizer_Adam = torch.optim.Adam( self.dnn.parameters() )
+         self.iter = 0
+         
+     def net_u(self, x, t): 
+         u = self.dnn( torch.cat([x, t], dim=1) )
+         return u
+     def net_f(self, x, t):
+         """ The pytorch autograd version of calculating residual """
+         lambda_1 = self.lambda_1
+         lambda_2 = torch.exp(self.lambda_2)
+         u = self.net_u(x, t)
+         
+         u_t = torch.autograd.grad(
+             u, t,
+             grad_outputs=torch.ones_like(u),
+             retain_graph=True,
+             create_graph=True
+         )[0]
+         u_x = torch.autograd.grad(
+             u, x,
+             grad_outputs=torch.ones_like(u),
+             retain_graph=True,
+             create_graph=True
+         )[0]
+         u_xx = torch.autograd.grad(
+             
+
+
+
 
 
 
