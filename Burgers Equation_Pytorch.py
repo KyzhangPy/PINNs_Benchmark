@@ -70,7 +70,7 @@ class DNN(torch.nn.Module):
         for i in range(self.depth - 1):
             layer_list.append(  ( 'layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]) )  )
             # nn.Linear(in_feature,out_feature,bias)表示线性变换
-            # in_feature表示输入Tensor最后一维的通道数，int型，out_feature表示输出Tensor最后一维的通道数，int型，bias表示是否添加bias偏置，bool型
+            # in_feature表示输入神经元的个数，int型，out_feature表示输出神经元的个数，int型，bias表示是否添加偏置，bool型
             # 表示在layer_list的第i列插入上述线性变换
             layer_list.append(  ( 'activation_%d' % i, self.activation() )  )
             # 表示在layer_list的
