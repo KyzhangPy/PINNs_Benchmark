@@ -283,7 +283,8 @@ model.train(10000)
 
 
 ### 可视化
-####### Row 0: u(t,x) ################## 
+""" The aesthetic setting has changed. """
+####### Row 0: u(t,x) ######
 
 fig = plt.figure(figsize=(9, 5))
 ax = fig.add_subplot(111)
@@ -324,6 +325,98 @@ ax.tick_params(labelsize=15)
 
 plt.show()
 
+####### Row 1: u(t,x) slices ######
+
+""" The aesthetic setting has changed. """
+
+fig = plt.figure(figsize=(14, 10))
+ax = fig.add_subplot(111)
+
+gs1 = gridspec.GridSpec(1, 3)
+gs1.update(top=1-1.0/3.0-0.1, bottom=1.0-2.0/3.0, left=0.1, right=0.9, wspace=0.5)
+
+ax = plt.subplot(gs1[0, 0])
+ax.plot(x,Exact[25,:], 'b-', linewidth = 2, label = 'Exact')       
+ax.plot(x,U_pred[25,:], 'r--', linewidth = 2, label = 'Prediction')
+ax.set_xlabel('$x$')
+ax.set_ylabel('$u(t,x)$')    
+ax.set_title('$t = 0.25$', fontsize = 15)
+ax.axis('square')
+ax.set_xlim([-1.1,1.1])
+ax.set_ylim([-1.1,1.1])
+
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(15)
+
+ax = plt.subplot(gs1[0, 1])
+ax.plot(x,Exact[50,:], 'b-', linewidth = 2, label = 'Exact')       
+ax.plot(x,U_pred[50,:], 'r--', linewidth = 2, label = 'Prediction')
+ax.set_xlabel('$x$')
+ax.set_ylabel('$u(t,x)$')
+ax.axis('square')
+ax.set_xlim([-1.1,1.1])
+ax.set_ylim([-1.1,1.1])
+ax.set_title('$t = 0.50$', fontsize = 15)
+ax.legend(
+    loc='upper center', 
+    bbox_to_anchor=(0.5, -0.15), 
+    ncol=5, 
+    frameon=False, 
+    prop={'size': 15}
+)
+
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(15)
+
+ax = plt.subplot(gs1[0, 2])
+ax.plot(x,Exact[75,:], 'b-', linewidth = 2, label = 'Exact')       
+ax.plot(x,U_pred[75,:], 'r--', linewidth = 2, label = 'Prediction')
+ax.set_xlabel('$x$')
+ax.set_ylabel('$u(t,x)$')
+ax.axis('square')
+ax.set_xlim([-1.1,1.1])
+ax.set_ylim([-1.1,1.1])    
+ax.set_title('$t = 0.75$', fontsize = 15)
+
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(15)
+
+plt.show()
 
 
-    
+### evaluations 误差估计
+u_pred, f_pred = model.predict(X_star)
+
+lambda_1_value_noisy = model.lambda_1.detach().cpu().numpy()
+lambda_2_value_noisy = model.lambda_2.detach().cpu().numpy()
+lambda_2_value_noisy = np.exp(lambda_2_value_noisy)
+
+error_lambda_1_noisy = np.abs(lambda_1_value_noisy - 1.0) * 100
+error_lambda_2_noisy = np.abs(lambda_2_value_noisy - nu) / nu * 100
+
+print('Error u: %e' % (error_u))    
+print('Error l1: %.5f%%' % (error_lambda_1_noisy))                             
+print('Error l2: %.5f%%' % (error_lambda_2_noisy)) 
+
+####### Row 3: Identified PDE ######
+
+fig = plt.figure(figsize=(14, 10))
+
+gs2 = gridspec.GridSpec(1, 3)
+gs2.update(top=0.25, bottom=0, left=0.0, right=1.0, wspace=0.0)
+
+ax = plt.subplot(gs2[:, :])
+ax.axis('off')
+
+s1 = r'$\begin{tabular}{ |c|c| }  \hline Correct PDE & $u_t + u u_x - 0.0031831 u_{xx} = 0$ \\  \hline Identified PDE (clean data) & '
+s2 = r'$u_t + %.5f u u_x - %.7f u_{xx} = 0$ \\  \hline ' % (lambda_1_value, lambda_2_value)
+s3 = r'Identified PDE (1\% noise) & '
+s4 = r'$u_t + %.5f u u_x - %.7f u_{xx} = 0$  \\  \hline ' % (lambda_1_value_noisy, lambda_2_value_noisy)
+s5 = r'\end{tabular}$'
+s = s1+s2+s3+s4+s5
+ax.text(0.1, 0.1, s, size=25)
+
+plt.show()
