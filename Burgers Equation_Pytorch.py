@@ -49,7 +49,7 @@ else:
     device = torch.device('cpu')
 
 
-### 定义神经网络模型的类DNN，继承自nn.Module
+### 神经网络模型的类DNN，继承自nn.Module
 class DNN(torch.nn.Module):
 # nn.Module是PyTorch中所有神经网络模型的基类
     def __init__(self, layers):
@@ -71,9 +71,7 @@ class DNN(torch.nn.Module):
             layer_list.append(  ( 'layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]) )  )
             # nn.Linear(in_feature,out_feature,bias)表示线性变换
             # in_feature表示输入神经元的个数，int型，out_feature表示输出神经元的个数，int型，bias表示是否添加偏置，bool型
-            # 表示在layer_list的第i列插入上述线性变换
             layer_list.append(  ( 'activation_%d' % i, self.activation() )  )
-            # 表示在layer_list的
         layer_list.append(  ( 'layer_%d' % (self.depth - 1), torch.nn.Linear(layers[-2], layers[-1]) )  )
         layerDict = OrderedDict(layer_list)
         # OrderedDict()是一个特殊的字典子类，保持了字典中元素被插入时的顺序，当你遍历一个OrderedDict时，元素会按照它们被插入的顺序出现，而不是按照它们的键的排序顺序
