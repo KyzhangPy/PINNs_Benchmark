@@ -69,8 +69,7 @@ class DNN(torch.nn.Module):
         # 创建表达layers结构的空张量
         for i in range(self.depth - 1):
             layer_list.append(  ( 'layer_%d' % i, torch.nn.Linear(layers[i], layers[i+1]) )  )
-            # nn.Linear(in_feature,out_feature,bias)表示线性变换
-            # in_feature表示输入神经元的个数，int型，out_feature表示输出神经元的个数，int型，bias表示是否添加偏置，bool型
+            # nn.Linear(in_feature,out_feature,bias)表示线性变换，in_feature-输入神经元的个数，int型，out_feature-输出神经元的个数，int型，bias-是否添加偏置，bool型
             layer_list.append(  ( 'activation_%d' % i, self.activation() )  )
         layer_list.append(  ( 'layer_%d' % (self.depth - 1), torch.nn.Linear(layers[-2], layers[-1]) )  )
         layerDict = OrderedDict(layer_list)
@@ -86,7 +85,7 @@ class DNN(torch.nn.Module):
         return out
 
 
-### 定义PINN神经网络的类
+### PINN的类
 class PhysicsInformedNN():
      def __init__(self, X, u, layers, lb, ub):
 
